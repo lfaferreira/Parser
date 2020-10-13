@@ -16,51 +16,152 @@ import java.util.Deque;
  */
 public class Parser {
 
-    private Deque<String> TOKEN = new ArrayDeque<String>();//Pilha para guardar os tokens criados.
-    private final Scanner SCANNER = new Scanner();
+    private Deque<String> token;
+    private Scanner scanner;
+    private char currentChar;
 
-    public Parser() {
-
+    public Parser(Scanner arquivo) {
+        this.token = new ArrayDeque<String>();
+        this.scanner = arquivo;
+        this.currentChar = ' ';
     }
 
-    public void runningParser(BufferedReader arquivoUsuario) throws IOException {
-        programSyntax(arquivoUsuario);
-        arithmeticExpression(arquivoUsuario);
-        assignment(arquivoUsuario);
+    public void runningParser() throws IOException {
+        programSyntax();
+        arithmeticExpression();
+        assignment();
+        relationalExpression();
+        variableDeclaration();
     }
 
-    private void variableDeclaration(BufferedReader arquivoUsuario) throws IOException {
-        getToken(arquivoUsuario); //1ª Chamada do Scanner          
-        if (isVariableTypeValidation(TOKEN.element())) {
-            getToken(arquivoUsuario); //2ª Chamada do Scanner          
-            if (isIdValidation(TOKEN.element())) {
-                do {
-                    getToken(arquivoUsuario); //3ª Chamada do Scanner	
-                    if (TOKEN.element().equalsIgnoreCase("41")) {
-                        getToken(arquivoUsuario); //4ª chamada do Scanner          
-                        if (!isIdValidation(TOKEN.element())) {
-                            System.out.println("erro de validação do token, tipo ID");
+    private void getHead() {
+        this.currentChar = this.scanner.getHead();
+        //System.out.println(this.currentChar);
+    }
+
+    private void getToken() throws IOException {
+        this.token = this.scanner.scan();
+    }
+
+    private void programSyntax() throws IOException {
+        getHead();
+        //1ª Chamada do Scanner 
+        if (Character.isLetter(this.currentChar)) {
+            getToken();
+            if (this.token.element().equalsIgnoreCase("56")) {// 56 é o codigo do int
+                getHead();
+                if (Character.isLetter(this.currentChar)) {
+                    getToken();
+                    if (this.token.element().equalsIgnoreCase("50")) {//50 é o codigo do main
+                        getHead();
+                        if (isOpeningParentheses(this.currentChar)) {
+                            getToken();
+                            getHead();
+                            if (isClosingParentheses(this.currentChar)) {
+                                getToken();
+                                getHead();
+                            } else {
+                                System.err.println("token esperado: ')'");
+                            }
+                        } else {
+                            System.err.println("token esperado: '('");
+                        }
+                    } else {
+                        System.err.println("token esparado: main");
+                    }
+                } else {
+                    System.err.println("token esparado: main");
+                }
+            } else {
+                System.err.println("token esparado: int");
+            }
+        } else {
+            System.err.println("token esparado: int");
+        }
+    }
+
+    private void variableDeclaration() throws IOException {
+        getHead();
+        if (isCharacterOrDigit()) {
+            getToken();
+            if (isVariableTypeValidation(this.token.element())) {
+                getHead();
+                if (isCharacterOrDigit() || this.currentChar == 95) {
+                    getToken();
+                    if (isIdValidation(this.token.element())) {
+                        while (true) {
+                            getHead();
+                            if (this.currentChar == ',') {
+                                getToken();
+                                getHead();
+                                if (isCharacterOrDigit() || this.currentChar == 95) {
+                                    getToken();
+                                } else {
+                                    System.err.println("Token esperado: 'ID'");
+                                    System.exit(0);
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        if (this.currentChar == ';') {
+                            return;
+                        } else {
+                            System.err.println("Token esperado: ';'");
                             System.exit(0);
                         }
-                    } else if (TOKEN.element().equalsIgnoreCase("40")) {
-                        break;
                     } else {
-                        System.out.println("erro de validação do token, tipo ;");
+                        System.err.println("Token esperado: 'ID'");
                         System.exit(0);
                     }
-                } while (!TOKEN.element().equalsIgnoreCase("40"));
+                } else {
+                    System.err.println("Token esperado: 'ID'");
+                    System.exit(0);
+                }
             } else {
-                System.out.println("erro de validação do token, tipo ID");
+                System.err.println("Token esperado: int, float ou char");
                 System.exit(0);
             }
         } else {
-            System.out.println("erro de validação do token, tipo primitivo: int, float ou char");
+            System.err.println("Token esperado: int, float ou char");
             System.exit(0);
         }
     }
 
-    private void getToken(BufferedReader arquivoUsuario) throws IOException {//Pegar o proximo token e identificador do arquivo com Scanner;
-        TOKEN = SCANNER.scan(arquivoUsuario);
+    private boolean isCharacterOrDigit() {
+        if (Character.isLetterOrDigit(this.currentChar)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void codeBlock() throws IOException {
+        getHead();
+        if (this.currentChar == '{') {
+            getToken();
+            while (true) {
+                variableDeclaration();
+
+            }
+            
+        } else {
+            System.err.println("token esperado: '{'");
+            System.exit(0);
+        }
+    }
+
+    private void codeCommand() throws IOException {
+
+    }
+    
+    private void basicCodeCommand() throws IOException{
+        if(assignment()){
+            
+        }else{
+            codeBlock();
+        }
+        
     }
 
     private boolean isIdValidation(String type) {//Metodo para validação de identificadores.
@@ -78,150 +179,148 @@ public class Parser {
         }
     }
 
-    private void programSyntax(BufferedReader arquivoUsuario) throws IOException {
-        getToken(arquivoUsuario); //1ª Chamada do Scanner 
-        if (TOKEN.element().equalsIgnoreCase("56")) {// 56 é o codigo do int
-            getToken(arquivoUsuario); //2ª Chamada do Scanner 
-            if (TOKEN.element().equalsIgnoreCase("50")) {//50 é o codigo do main
-                getToken(arquivoUsuario); //3ª Chamada do Scanner 
-                if (isOpeningParentheses(TOKEN.element())) {
-                    getToken(arquivoUsuario); //4ª Chamada do Scanner 
-                    if (isClosingParentheses(TOKEN.element())) {
-                        return;
+    private boolean isOpeningParentheses(char value) { //Metodo para verificação do codigo do parenteses de abertura
+        if (value == '(') { // 44 = (
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isClosingParentheses(char value) { //Metodo para verificação do codigo do parenteses de fechamento
+        if (value == ')') {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean assignment() throws IOException {
+        getHead();
+        if (Character.isLetter(this.currentChar) || this.currentChar == 95) {
+            getToken();
+            if (isIdValidation(token.element())) {
+                getHead();
+                if (this.currentChar == '=') { //Verificação do token para saber se ele é o igual. O codigo 30 corresponde ao simoblo de=
+                    getToken();
+                    if (token.element().equalsIgnoreCase("30")) {
+                        arithmeticExpression();
+                        getHead();
+                        if (this.currentChar == ';') {
+                            getToken();
+                            return true;
+                        } else {
+                            return false;
+                            //System.out.println("token esperado: ';'");
+                            //System.exit(0);
+                        }
                     } else {
-                        System.out.println("erro de validação do token, tipo )");
-                        System.exit(0);
+                        return false;
+                        //System.out.println("token esperado: '='");
+                        //System.exit(0);
                     }
                 } else {
-                    System.out.println("erro de validação do token, tipo (");
-                    System.exit(0);
+                    return false;
+                    //System.out.println("token esperado: '='");
+                    //System.exit(0);
                 }
             } else {
-                System.out.println("erro de validação do token, tipo main");
-                System.exit(0);
+                return false;
+                //System.out.println("token esperado: 'ID'");
+               //System.exit(0);
             }
-        } else {
-            System.out.println("erro de validação do token, tipo int");
-            System.exit(0);
-        }
-    }
-
-    private boolean isOpeningParentheses(String value) { //Metodo para verificação do codigo do parenteses de abertura
-        if (value.equalsIgnoreCase("44")) { // 44 = (
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isClosingParentheses(String value) { //Metodo para verificação do codigo do parenteses de fechamento
-        if (value.equalsIgnoreCase("45")) { // 45 = )
-            return true;
-        }
-        return false;
-    }
-
- 
-    private void assignment(BufferedReader arquivoUsuario) throws IOException {
-        getToken(arquivoUsuario); //1ª chamada Scanner
-        if (isVariableTypeValidation(TOKEN.element())) {
-            getToken(arquivoUsuario); //2ª chamada Scanner
-            if (TOKEN.element().equalsIgnoreCase("30")) { //Verificação do token para saber se ele é o igual. O codigo 30 corresponde ao simoblo de=
-                arithmeticExpression(arquivoUsuario);
-                getToken(arquivoUsuario);//3ª chamada Scanner
-                if (TOKEN.element().equalsIgnoreCase("40")) {
-                    return;
-                } else {
-                    System.out.println("erro de validação do token, tipo ;");
-                    System.exit(0);
-                }
-            } else {
-                System.out.println("erro de validação do token, tipo =");
-                System.exit(0);
-            }
-        } else {
-            System.out.println("erro de validação do token, tipo ID");
-            System.exit(0);
-        }
-    }
-
-    private void arithmeticExpression(BufferedReader arquivoUsuario) throws IOException {
-        while (true) {
-            termToken(arquivoUsuario);
-            getToken(arquivoUsuario);
-            if (TOKEN.element().equalsIgnoreCase("31")) {
-                arithmeticExpression(arquivoUsuario);
-            } else if (TOKEN.element().equalsIgnoreCase("32")) {
-                arithmeticExpression(arquivoUsuario);
-            } else {
-                return;
-            }
-        }
-
-    }
-
-    private void termToken(BufferedReader arquivoUsuario) throws IOException {
-        factorToken(arquivoUsuario);
-        do {
-            getToken(arquivoUsuario);
-            if (TOKEN.isEmpty()) {
-                if (isMultiplicationOrDivision(TOKEN.element())) {
-                    factorToken(arquivoUsuario);
-                } else {
-                    return;
-                }
-            }else{
-                return;
-            }
-        } while (true);
-    }
-
-    private boolean isMultiplicationOrDivision(String value) {//Metodo de validação para tokens com simbolo de multiplicação '*' e divisão '/'
-        if (value.equalsIgnoreCase("33")) {
-            return true;
-        } else if (value.equalsIgnoreCase("34")) {
-            return true;
-        }
-        return false;
-    }
-
-    private void factorToken(BufferedReader arquivoUsuario) throws IOException {
-        getToken(arquivoUsuario);
-        if (isOpeningParentheses(TOKEN.element())) {
-            arithmeticExpression(arquivoUsuario);
-            getToken(arquivoUsuario);
-            if (isClosingParentheses(TOKEN.element())) {
-                return;
-            } else {
-                System.out.println("erro de validação do token, tipo )");
-                System.exit(0);
-            }
-        } else if (isIdValidation(TOKEN.element())) {
-            System.out.println(TOKEN.element());
-            return;
-        } else if (isFactorTypeValidation(TOKEN.element())) {
-            return;
-        } else {
-            System.out.println("Erro no tipo do token. O token não é uma expressão aritmetica, um ID, um float, um inteiro ou um char.");
-            System.exit(0);
-        }
-    }
-
-    private boolean isFactorTypeValidation(String value) {
-        if (value.equalsIgnoreCase("60")) {
-            return true;
-        } else if (value.equalsIgnoreCase("70")) {
-            return true;
-        } else if (value.equalsIgnoreCase("80")) {
-            return true;
         } else {
             return false;
+            //System.err.println("token esperado: 'ID'");
+            //System.exit(0);
         }
     }
 
-    private void printToken() {//Metodo para printar todos os tokens e seus respectivos tipos.
-        while (TOKEN.element() != null) {
-            System.out.println(TOKEN.removeFirst());
+    private void relationalExpression() throws IOException {
+        arithmeticExpression();
+        if (isFirstPartRelationalExpression()) {
+            getToken();
+            if (isRelationalExpression()) {
+                arithmeticExpression();
+            } else {
+                System.err.println("token esparado: '==' ou '>=' ou '>' ou '<' ou '<=' ou '!='");
+            }
+        } else {
+            System.err.println("token esparado: '=' ou '>' ou '<' ou '!' ");
         }
-        System.exit(0);
+    }
+
+    private boolean isFirstPartRelationalExpression() {
+        if (!this.token.isEmpty()) {
+            switch (this.currentChar) {
+                case '=':
+                case '>':
+                case '<':
+                case '!':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
+    private boolean isRelationalExpression() {
+        if (!this.token.isEmpty()) {
+            switch (this.token.element()) {
+                case "20":
+                case "21":
+                case "22":
+                case "23":
+                case "24":
+                case "25":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
+    private void arithmeticExpression() throws IOException {
+        getHead();
+        do {
+            if (this.currentChar == '+') {
+                getToken();
+                arithmeticExpression();
+            } else if (this.currentChar == '-') {
+                getToken();
+                arithmeticExpression();
+            } else if (this.currentChar == 65535) {
+                return;
+            } else {
+                termToken();
+            }
+        } while (this.currentChar == '+' || this.currentChar == '-');
+    }
+
+    private void termToken() throws IOException {
+        factorToken();
+        while (this.currentChar == '*' || this.currentChar == '/') {
+            getToken();
+            getHead();
+            factorToken();
+        }
+    }
+
+    private void factorToken() throws IOException {
+        if (Character.isLetterOrDigit(this.currentChar) || this.currentChar == 39) {
+            getToken();
+        } else if (this.currentChar == '(') {
+            getToken();
+            arithmeticExpression();
+            if (this.currentChar == ')') {
+                getToken();
+            } else {
+                System.err.println("esperado: ')'");
+            }
+        } else {
+            System.err.println("não é ID, FLOAT, INTEIRO, CHAR, '(' OU ')'");
+            System.exit(0);
+        }
+        getHead();
     }
 }
