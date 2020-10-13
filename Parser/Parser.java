@@ -27,9 +27,8 @@ public class Parser {
     }
 
     public void runningParser() throws IOException {
-       // programSyntax();   
-       getHead();
-       codeBlock();
+        //variableDeclaration();
+        programSyntax();
     }
 
     private void getHead() {
@@ -58,27 +57,48 @@ public class Parser {
                                 getToken();
                                 getHead();
                                 if (!codeBlock()) {
-                                    System.err.println("Tipo do Token esperado: '{'");
-                                    System.exit(0);
+                                    characterInvalid("Tipo do Token esperado: '{'");
                                 }
                             } else {
-                                System.err.println("token esperado: ')'");
+                                characterInvalid("Tipo do Token esperado: ')'");
                             }
                         } else {
-                            System.err.println("token esperado: '('");
+                            characterInvalid("Tipo do Token esperado: '('");
                         }
                     } else {
-                        System.err.println("token esparado: main");
+                        characterInvalid("token esperado: 'main'");
                     }
                 } else {
-                    System.err.println("token esparado: main");
+                    characterInvalid("token esparado: main");
                 }
             } else {
-                System.err.println("token esparado: int");
+                characterInvalid("token esparado: int");
             }
         } else {
-            System.err.println("token esparado: int");
+            characterInvalid("token esparado: int");
         }
+    }
+
+    private boolean codeBlock() throws IOException {
+        if (this.currentChar == '{') {
+            getToken();
+            boolean aux;
+            do {
+                aux = variableDeclaration();
+            } while (aux);
+            do {
+                aux = codeCommand();
+            } while (aux);
+            getToken();
+            if (this.currentChar == '}') {
+                return true;
+            } else {
+                characterInvalid("Tipo do token esperado: '}'");
+            }
+        }else {
+            return false;
+        }
+        return false;
     }
 
     private boolean variableDeclaration() throws IOException {
@@ -98,34 +118,31 @@ public class Parser {
                                 if (isCharacterOrDigit() || this.currentChar == 95) {
                                     getToken();
                                 } else {
-                                    System.err.println("Token esperado: 'ID'");
-                                    System.exit(0);
+                                    characterInvalid("Token esperado: 'ID'");
                                 }
                             } else {
                                 break;
                             }
                         }
                         if (this.currentChar == ';') {
+                            getToken();
                             return true;
                         } else {
-                            System.err.println("Token esperado: ';'");
-                            System.exit(0);
+                            characterInvalid("Token esperado: ';'");
                         }
                     } else {
-                        System.err.println("Token esperado: 'ID'");
-                        System.exit(0);
+                        characterInvalid("Token esperado: 'ID'");
                     }
                 } else {
-                    System.err.println("Token esperado: 'ID'");
-                    System.exit(0);
+                    characterInvalid("Token esperado: 'ID'");
                 }
+            } else if (isTokenReserved()) {
+                return false;
+            } else if (isIdValidation(this.token.element())) {
+                return false;
             } else {
-                System.err.println("Token esperado: int, float ou char");
-                System.exit(0);
+                characterInvalid("Token esperado: int, float ou char");
             }
-        } else {
-            System.err.println("Token esperado: int, float ou char");
-            System.exit(0);
         }
         return false;
     }
@@ -138,24 +155,22 @@ public class Parser {
         }
     }
 
-    private boolean codeBlock() throws IOException {        
-        if (this.currentChar == '{') {
-            getToken();
-            while (variableDeclaration()) {
-                variableDeclaration();
-            }
-            while (codeCommand()) {
-                codeCommand();
-            }
-            getHead();
-            if (this.currentChar == '}') {
+    private boolean isTokenReserved() {
+        switch (this.token.element()) {
+            case "50":
+            case "51":
+            case "52":
+            case "53":
+            case "54":
+            case "55":
+            case "56":
+            case "57":
+            case "58":
                 return true;
-            } else {
-                System.err.println("Tipo do Token esperado: '}'");
-                System.exit(0);
-            }
+            default:
+                return false;
+
         }
-        return false;
     }
 
     private boolean codeCommand() throws IOException {
@@ -164,25 +179,24 @@ public class Parser {
             return true;
         } else if (iterationCode()) {
             return true;
-        } else if (this.token.element().equalsIgnoreCase("51")) {
+        } else if (this.token.element().equalsIgnoreCase("51")) { // Entra neste caso, caso o token seja um "if"
             getHead();
-            if (isOpeningParentheses(this.currentChar)) {
+            if (isOpeningParentheses(this.currentChar)) {  // O proximo caracterer, obrigatoriamente, tem que ser um '('
                 getToken();
                 relationalExpression();
                 getHead();
-                if (isClosingParentheses(this.currentChar)) {
+                if (isClosingParentheses(this.currentChar)) { //Ao sair da expressão relacional, proximo caracter tem que ser ')'
+                    getToken();
                     codeCommand();
                     if (this.token.element().equalsIgnoreCase("52")) {
                         codeCommand();
                     }
                     return true;
                 } else {
-                    System.err.println("Tipo do token no final da expressão condigional: ')'");
-                    System.exit(0);
+                    characterInvalid("Tipo do token no final da expressão condigional: ')'");
                 }
             } else {
-                System.err.println("Tipo do token no inicio da expressão condigional: '('");
-                System.exit(0);
+                characterInvalid("Tipo do token no inicio da expressão condigional: '('");
             }
         }
         return false;
@@ -210,12 +224,10 @@ public class Parser {
                     codeCommand();
                     return true;
                 } else {
-                    System.err.println("Tipo do token no final da expressão condigional: ')'");
-                    System.exit(0);
+                    characterInvalid("Tipo do token no final da expressão condigional: ')'");
                 }
             } else {
-                System.err.println("Tipo do token no inicio da expressão condigional: '('");
-                System.exit(0);
+                characterInvalid("Tipo do token no inicio da expressão condigional: '('");
             }
         } else if (this.token.element().equalsIgnoreCase("54")) {
             codeCommand();
@@ -231,16 +243,13 @@ public class Parser {
                         if (this.currentChar == ';') {
                             return true;
                         } else {
-                            System.err.println("Tipo do token no final da expressão condigional: ';'");
-                            System.exit(0);
+                            characterInvalid("Tipo do token no final da expressão condigional: ';'");
                         }
                     } else {
-                        System.err.println("Tipo do token no final da expressão condigional: ')'");
-                        System.exit(0);
+                        characterInvalid("Tipo do token no final da expressão condigional: ')'");
                     }
                 } else {
-                    System.err.println("Tipo do token no inicio da expressão condigional: '('");
-                    System.exit(0);
+                    characterInvalid("Tipo do token no inicio da expressão condigional: '('");
                 }
             }
         }
@@ -261,30 +270,21 @@ public class Parser {
                             getToken();
                             return true;
                         } else {
-                            return false;
-                            //System.out.println("token esperado: ';'");
-                            //System.exit(0);
+                            characterInvalid("token esperado: ';'");
                         }
                     } else {
-                        return false;
-                        //System.out.println("token esperado: '='");
-                        //System.exit(0);
+                        characterInvalid("token esperado: '='");
                     }
                 } else {
-                    return false;
-                    //System.out.println("token esperado: '='");
-                    //System.exit(0);
+                    characterInvalid("token esperado: '='");
                 }
-            } else {
+            } else if (isTokenReserved()) {
                 return false;
-                //System.out.println("token esperado: 'ID'");
-                //System.exit(0);
+            } else {
+                characterInvalid("token esperado: 'ID'");
             }
-        } else {
-            return false;
-            //System.err.println("token esperado: 'ID'");
-            //System.exit(0);
         }
+        return false;
     }
 
     private boolean isIdValidation(String type) {//Metodo para validação de identificadores.
@@ -323,10 +323,10 @@ public class Parser {
             if (isRelationalExpression()) {
                 arithmeticExpression();
             } else {
-                System.err.println("token esparado: '==' ou '>=' ou '>' ou '<' ou '<=' ou '!='");
+                characterInvalid("token esparado: '==' ou '>=' ou '>' ou '<' ou '<=' ou '!='");
             }
         } else {
-            System.err.println("token esparado: '=' ou '>' ou '<' ou '!' ");
+            characterInvalid("token esparado: '=' ou '>' ou '<' ou '!' ");
         }
     }
 
@@ -389,7 +389,7 @@ public class Parser {
     }
 
     private void factorToken() throws IOException {
-        if (Character.isLetterOrDigit(this.currentChar) || this.currentChar == 39) {
+        if (Character.isLetterOrDigit(this.currentChar) || this.currentChar == 39 || this.currentChar == '.') {
             getToken();
         } else if (this.currentChar == '(') {
             getToken();
@@ -397,12 +397,16 @@ public class Parser {
             if (this.currentChar == ')') {
                 getToken();
             } else {
-                System.err.println("esperado: ')'");
+                characterInvalid("esperado: ')'");
             }
         } else {
-            System.err.println("não é ID, FLOAT, INTEIRO, CHAR, '(' OU ')'");
-            System.exit(0);
+            characterInvalid("não é ID, FLOAT, INTEIRO, CHAR, '(' OU ')'");
         }
         getHead();
+    }
+
+    private void characterInvalid(String mensagem) {
+        System.err.println("ERRO na linha " + this.scanner.getLine() + ", coluna " + this.scanner.getColumn() + "\nUltimo token lido:  [Tipo = " + this.token.remove() + "],[Token = '" + this.token.remove() + "' ] \n" + mensagem);
+        System.exit(0);
     }
 }
