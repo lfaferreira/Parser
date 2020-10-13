@@ -27,16 +27,13 @@ public class Parser {
     }
 
     public void runningParser() throws IOException {
-        programSyntax();
-        arithmeticExpression();
-        assignment();
-        relationalExpression();
-        variableDeclaration();
+       // programSyntax();   
+       getHead();
+       codeBlock();
     }
 
     private void getHead() {
         this.currentChar = this.scanner.getHead();
-        //System.out.println(this.currentChar);
     }
 
     private void getToken() throws IOException {
@@ -60,6 +57,10 @@ public class Parser {
                             if (isClosingParentheses(this.currentChar)) {
                                 getToken();
                                 getHead();
+                                if (!codeBlock()) {
+                                    System.err.println("Tipo do Token esperado: '{'");
+                                    System.exit(0);
+                                }
                             } else {
                                 System.err.println("token esperado: ')'");
                             }
@@ -80,7 +81,7 @@ public class Parser {
         }
     }
 
-    private void variableDeclaration() throws IOException {
+    private boolean variableDeclaration() throws IOException {
         getHead();
         if (isCharacterOrDigit()) {
             getToken();
@@ -105,7 +106,7 @@ public class Parser {
                             }
                         }
                         if (this.currentChar == ';') {
-                            return;
+                            return true;
                         } else {
                             System.err.println("Token esperado: ';'");
                             System.exit(0);
@@ -126,6 +127,7 @@ public class Parser {
             System.err.println("Token esperado: int, float ou char");
             System.exit(0);
         }
+        return false;
     }
 
     private boolean isCharacterOrDigit() {
@@ -136,65 +138,116 @@ public class Parser {
         }
     }
 
-    private void codeBlock() throws IOException {
-        getHead();
+    private boolean codeBlock() throws IOException {        
         if (this.currentChar == '{') {
             getToken();
-            while (true) {
+            while (variableDeclaration()) {
                 variableDeclaration();
-
             }
-            
-        } else {
-            System.err.println("token esperado: '{'");
-            System.exit(0);
-        }
-    }
-
-    private void codeCommand() throws IOException {
-
-    }
-    
-    private void basicCodeCommand() throws IOException{
-        if(assignment()){
-            
-        }else{
-            codeBlock();
-        }
-        
-    }
-
-    private boolean isIdValidation(String type) {//Metodo para validação de identificadores.
-        if (type.equalsIgnoreCase("10")) { //identificadores(variaveis) = 10;
-            return true;
+            while (codeCommand()) {
+                codeCommand();
+            }
+            getHead();
+            if (this.currentChar == '}') {
+                return true;
+            } else {
+                System.err.println("Tipo do Token esperado: '}'");
+                System.exit(0);
+            }
         }
         return false;
     }
 
-    private boolean isVariableTypeValidation(String type) {//Metodo para validação dos possiveis tipos para variaveis nesta linguagem. 
-        if (type.equalsIgnoreCase("56") || type.equalsIgnoreCase("57") || type.equalsIgnoreCase("58")) {//int = 56; float = 57; char = 58;
+    private boolean codeCommand() throws IOException {
+        getHead();
+        if (basicCodeCommand()) {
+            return true;
+        } else if (iterationCode()) {
+            return true;
+        } else if (this.token.element().equalsIgnoreCase("51")) {
+            getHead();
+            if (isOpeningParentheses(this.currentChar)) {
+                getToken();
+                relationalExpression();
+                getHead();
+                if (isClosingParentheses(this.currentChar)) {
+                    codeCommand();
+                    if (this.token.element().equalsIgnoreCase("52")) {
+                        codeCommand();
+                    }
+                    return true;
+                } else {
+                    System.err.println("Tipo do token no final da expressão condigional: ')'");
+                    System.exit(0);
+                }
+            } else {
+                System.err.println("Tipo do token no inicio da expressão condigional: '('");
+                System.exit(0);
+            }
+        }
+        return false;
+    }
+
+    private boolean basicCodeCommand() throws IOException {
+        if (assignment()) {
+            return true;
+        } else if (codeBlock()) {
             return true;
         } else {
             return false;
         }
     }
 
-    private boolean isOpeningParentheses(char value) { //Metodo para verificação do codigo do parenteses de abertura
-        if (value == '(') { // 44 = (
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isClosingParentheses(char value) { //Metodo para verificação do codigo do parenteses de fechamento
-        if (value == ')') {
-            return true;
+    private boolean iterationCode() throws IOException {
+        if (this.token.element().equalsIgnoreCase("53")) {
+            getHead();
+            if (isOpeningParentheses(this.currentChar)) {
+                getToken();
+                relationalExpression();
+                getHead();
+                if (isClosingParentheses(this.currentChar)) {
+                    getToken();
+                    codeCommand();
+                    return true;
+                } else {
+                    System.err.println("Tipo do token no final da expressão condigional: ')'");
+                    System.exit(0);
+                }
+            } else {
+                System.err.println("Tipo do token no inicio da expressão condigional: '('");
+                System.exit(0);
+            }
+        } else if (this.token.element().equalsIgnoreCase("54")) {
+            codeCommand();
+            if (this.token.element().equalsIgnoreCase("53")) {
+                getHead();
+                if (isOpeningParentheses(this.currentChar)) {
+                    getToken();
+                    relationalExpression();
+                    getHead();
+                    if (isClosingParentheses(this.currentChar)) {
+                        getToken();
+                        getHead();
+                        if (this.currentChar == ';') {
+                            return true;
+                        } else {
+                            System.err.println("Tipo do token no final da expressão condigional: ';'");
+                            System.exit(0);
+                        }
+                    } else {
+                        System.err.println("Tipo do token no final da expressão condigional: ')'");
+                        System.exit(0);
+                    }
+                } else {
+                    System.err.println("Tipo do token no inicio da expressão condigional: '('");
+                    System.exit(0);
+                }
+            }
         }
         return false;
     }
 
     private boolean assignment() throws IOException {
-        getHead();
         if (Character.isLetter(this.currentChar) || this.currentChar == 95) {
             getToken();
             if (isIdValidation(token.element())) {
@@ -225,13 +278,42 @@ public class Parser {
             } else {
                 return false;
                 //System.out.println("token esperado: 'ID'");
-               //System.exit(0);
+                //System.exit(0);
             }
         } else {
             return false;
             //System.err.println("token esperado: 'ID'");
             //System.exit(0);
         }
+    }
+
+    private boolean isIdValidation(String type) {//Metodo para validação de identificadores.
+        if (type.equalsIgnoreCase("10")) { //identificadores(variaveis) = 10;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isVariableTypeValidation(String type) {//Metodo para validação dos possiveis tipos para variaveis nesta linguagem. 
+        if (type.equalsIgnoreCase("56") || type.equalsIgnoreCase("57") || type.equalsIgnoreCase("58")) {//int = 56; float = 57; char = 58;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isOpeningParentheses(char value) { //Metodo para verificação do codigo do parenteses de abertura
+        if (value == '(') { // 44 = (
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isClosingParentheses(char value) { //Metodo para verificação do codigo do parenteses de fechamento
+        if (value == ')') {
+            return true;
+        }
+        return false;
     }
 
     private void relationalExpression() throws IOException {
