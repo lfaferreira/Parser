@@ -16,7 +16,7 @@ import java.io.UnsupportedEncodingException;
  *
  * @author Lucas Fernando
  */
-public class Main {
+public class Compilador {
 
     /**
      * @param args the command line arguments
