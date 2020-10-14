@@ -80,6 +80,7 @@ public class Scanner {
     }
 
     private void localization() { //Metodo para identificar em qual local está ocorrendo a leitura do arquivo. Ocorre atraves de cada linha e coluna.
+        
         if (LOOKAHEAD == 13) {
             LINE = LINE + 1;
             COLUMN = 0;
@@ -397,9 +398,17 @@ public class Scanner {
         System.exit(0);
     }
 
+    public int getLine() {
+        return LINE;
+    }
+    
+    public int getColumn(){
+        return COLUMN;
+    }
+
     public char getHead() { //Metodo para printar todos os this.tokens e seus respectivos tipos.
         while (Character.isWhitespace(LOOKAHEAD)) { //Verificia se LH é space, quebra de linha ou TAB
-            lookAHead(arquivoUsuario);
+            lookAHead(arquivoUsuario);            
         }
         return LOOKAHEAD;
     }
